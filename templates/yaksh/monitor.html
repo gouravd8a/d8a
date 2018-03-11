@@ -1,0 +1,27 @@
+{% extends "manage.html" %}
+{% block title %} Monitor {% endblock %}
+{% block pagetitle %} {{ msg }} {% endblock pagetitle %}
+
+{% block meta %} <meta http-equiv="refresh" content="30"/> {% endblock meta %}
+
+
+{% block script %}
+{% if papers %}
+<script src="{{ URL_ROOT }}/static/yaksh/js/jquery.tablesorter.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function()
+    { 
+        $("#result-table").tablesorter({sortList: [[5,1]]});
+        var papers_length = "{{papers|length}}";
+        for (var i=0; i < papers_length; i++){
+            var time_left = $("#time_left"+[i]);
+            var time = time_left.text();
+            var hh   = Math.floor(time / 3600);
+            var mm = Math.floor((time - (hh * 3600)) / 60);
+            var ss = time - (hh * 3600) - (mm * 60);
+            time_left.text(hh + ":" + mm + ":" + ss)
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

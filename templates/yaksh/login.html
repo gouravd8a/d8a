@@ -6,12 +6,12 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6" style="border-right:1px solid gray;">
-        <form action="" method="post">
+        <form action="" method="POST">
           
         <center><table class="table">
         <tr>
         <td>
-        {{ form.username.label}} 
+        <b>Username:</b>
         </td>
         <td>
         {{ form.username}}
@@ -19,7 +19,7 @@
         </tr>
         <tr>
         <td>
-        {{ form.password.label}}
+        <b>Password:</b>
         </td>
         <td>
         {{ form.password}}
@@ -28,7 +28,7 @@
         </table></center>
         <button class="btn btn-primary" type="submit">Login</button>
         <a class="btn btn-primary" href="{{URL_ROOT}}/exam/reset/forgotpassword/">Forgot Password?</a>
-        <a class="btn btn-primary" href="{{URL_ROOT}}/exam/register/">New User? Sign-Up </a>
+        <a class="btn btn-primary" href="{{URL_ROOT}}/exam/register">New User? Sign-Up </a>
         <h3> Login with </h3>
         <a class="btn btn-social-icon btn-google">
             <span class="fa fa-google" style="font-size:32px;color:red" ></span>

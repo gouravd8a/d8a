@@ -1,0 +1,86 @@
+{% extends "manage.html" %}
+
+{% block subtitle %}Add Course{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/question_quiz.css" type="text/css" />
+<link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/jquery.datetimepicker.css" type="text/css" /> 
+{% endblock %}
+
+{% block script %}
+<script src="{{ URL_ROOT }}/static/yaksh/js/jquery.datetimepicker.full.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<form action="" method="post" >
+  <center>
+  <table class="table table-bordered">
+  <tr>
+  <td style="width: 50%">
+    <b>Name:</b>
+  </td>
+  <td>
+    {{form.name}}
+  </td>
+  </tr>
+  <tr>
+  <td>
+    <b>Enrollment:</b>
+  </td>
+  <td>
+    {{form.enrollment}}
+  </td>
+  </tr>
+  <tr>
+   <td>
+    <b>Active:</b>
+  </td>
+   <td>
+    {{form.active}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>Code:</b>
+  </td>
+   <td>
+    {{form.code}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>Instructions:</b>
+  </td>
+   <td>
+    {{form.instructions(rows='10',cols='40')}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Start Date and Time for enrollment of course:</b>
+  </td>
+   <td>
+    {{form.start_enroll_time}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>End Date and Time for enrollment of course:</b>
+  </td>
+   <td>
+    {{form.end_enroll_time}}
+  </td>
+  </tr>
+  </table>
+   </center>
+  <br/>
+  <script type="text/javascript">
+    $("#start_enroll_time").datetimepicker({format: 'Y-m-d H:i:s'});
+    $("#end_enroll_time").datetimepicker({format: 'Y-m-d H:i:s'});
+  </script>
+ 
+
+  <center><button class="btn primary" type="submit" id="submit" name="questionpaper">Save</button>
+  <button class="btn primary" type="button" name="button" onClick='location.replace("{{URL_ROOT}}/exam/manage/courses");'>Cancel</button> </center>
+</form>
+{% endblock %}

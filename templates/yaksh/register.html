@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+
+{% block pagetitle %} Online Test Registration {% endblock %}
+
+{% block content %}
+
+<form action="" method="post">
+    <h3> Please fill in the following details:</h3>
+    <center>
+        <table class="table">
+    <tr>
+  <td>
+    <b>Username:</b>
+  </td>
+  <td>
+    {{form.username}}
+    <br>Letters, digits, period and underscores only.</br>
+  </td>
+  </tr>
+  <tr>
+  <td>
+    <b>Email:</b>
+  </td>
+  <td>
+    {{form.email}}
+  </td>
+  </tr>
+  <tr>
+   <td>
+    <b>Password:</b>
+  </td>
+   <td>
+    {{form.password}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>Confirm Password:</b>
+  </td>
+   <td>
+    {{form.confirm_password}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>First name:</b>
+  </td>
+   <td>
+    {{form.first_name}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Last name:</b>
+  </td>
+   <td>
+    {{form.last_name}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Roll number:</b>
+  </td>
+   <td>
+    {{form.roll_number}}
+    <br>Use a dummy if you don't have one.</br>
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Institute:</b>
+  </td>
+   <td>
+    {{form.institute}}
+    <br>Institute/Organization</br>
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Department:</b>
+  </td>
+   <td>
+    {{form.department}}
+    <br>Department you work/study at</br>
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Position:</b>
+  </td>
+   <td>
+    {{form.position}}
+    <br>Student/Faculty/Researcher/Industry/etc.</br>
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Timezone:</b>
+  </td>
+   <td>
+    {{form.timezone}}
+  </td>
+  </tr>
+    </table></center>
+    <center><button class="btn btn-primary" type="submit">Register</button>&nbsp;&nbsp;<button class="btn btn-primary" type="reset">Cancel</button></center>
+</form>
+
+{% endblock content %}

@@ -1,0 +1,182 @@
+{% extends "manage.html" %}
+
+
+{% block subtitle %}Add Quiz{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/question_quiz.css" type="text/css" /> 
+<link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/jquery.datetimepicker.css" type="text/css" /> 
+{% endblock %}
+{% block script %}
+<script src="{{ URL_ROOT }}/static/yaksh/js/jquery-1.9.1.min.js"></script>
+<script src="{{ URL_ROOT }}/static/yaksh/js/add_quiz.js"></script>
+<script src="{{ URL_ROOT }}/static/yaksh/js/jquery.datetimepicker.full.min.js"></script>
+{% endblock %}
+{% block onload %} onload="javascript:test();"  {% endblock %}
+{% block content %}
+
+<form action="" method="post" >
+  <center>
+  <table class="span1 table">
+  <tr>
+  <td style="width:50%">
+    <b>Start Date and Time of the quiz:</b>
+  </td>
+  <td>
+    {{form.start_date_time}}
+  </td>
+  </tr>
+  <tr>
+  <td>
+    <b>End Date and Time of the quiz:</b>
+  </td>
+  <td>
+    {{form.end_date_time}}
+  </td>
+  </tr>
+  <tr>
+   <td>
+    <b>Duration of quiz in minutes:</b>
+  </td>
+   <td>
+    {{form.duration}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>Active:</b>
+  </td>
+   <td>
+    {{form.active}}
+  </td>
+  </tr>
+   <tr>
+   <td>
+    <b>Description:</b>
+  </td>
+   <td>
+    {{form.description}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Passing percentage:</b>
+  </td>
+   <td>
+    {{form.pass_criteria}}
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Attempts allowed:</b>
+  </td>
+   <td>
+    {{form.attempts_allowed}}
+  </td>
+  </tr>
+  <tr>
+   <td>
+    <b>Number of Days:</b>
+  </td>
+   <td>
+    {{form.time_between_attempts}}
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Instructions for Students:</b>
+  </td>
+   <td>
+            <p>
+            This examination system has been developed with the intention of
+            making you learn programming and be assessed in an interactive and
+            fun manner.You will be presented with a series of programming
+            questions and problems that you will answer online and get
+            immediate feedback for.
+            </p><p>Here are some important instructions and rules that you
+            should understand carefully.</p>
+            <ul><li>For any programming questions, you can submit solutions as
+            many times as you want without a penalty. You may skip questions
+            and solve them later.</li><li> You <strong>may</strong>
+            use your computer's Python/IPython shell or an editor to solve the
+            problem and cut/paste the solution to the web interface.
+            </li><li> <strong>You are not allowed to use any internet resources
+            i.e. no google etc.</strong>
+            </li>
+            <li> Do not copy or share the questions or answers with anyone
+            until the exam is complete <strong>for everyone</strong>.
+            </li><li> <strong>All</strong> your attempts at the questions are
+            logged. Do not try to outsmart and break the testing system.
+            If you do, we know who you are and we will expel you from the
+            course. You have been warned.
+            </li></ul>
+            <p>We hope you enjoy taking this exam !!!</p>
+  </td>
+  </tr>
+    <tr>
+   <td>
+    <b>Allow student to view their answer paper:</b>
+  </td>
+   <td>
+    {{form.view_answerpaper}}
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Allow students to skip questions:</b>
+  </td>
+   <td>
+    {{form.allow_skip}}
+  </td>
+  </tr>
+      <tr>
+   <td>
+    <b>Weightage:</b>
+  </td>
+   <td>
+    {{form.weightage}}
+  </td>
+  </tr>
+  </table>
+  <script type="text/javascript">
+    $("#start_date_time").datetimepicker({format: 'Y-m-d H:i:s'});
+    $("#end_date_time").datetimepicker({format: 'Y-m-d H:i:s'});
+  </script>
+  <br/><br/>
+  </center>
+
+  <center><button class="btn" type="submit" id="submit" name="questionpaper"> Save
+  </button>
+
+  <button class="btn" type="button" name="button" onClick='location.replace("{{URL_ROOT}}/exam/manage/courses/");'>Cancel</button> </center>
+  
+</form>
+<br>
+{% if quiz_id and course_id %}
+    <center>
+    <h4>You can check the quiz by attempting it in the following modes:</h4>
+  	<button class="btn" type="button" name="button" onClick='usermode("{{URL_ROOT}}/exam/manage/usermode/{{quiz_id}}/{{course_id}}/");'>User Mode</button>
+    
+  	<button class="btn" type="button" name="button" onClick='location.replace("{{URL_ROOT}}/exam/manage/godmode/{{quiz_id}}/{{course_id}}/");'>
+    God Mode</button> 
+    <a data-toggle="collapse" data-target="#help">
+    <span class="glyphicon glyphicon-info-sign">Help</span></a>
+   <div id="help" class="collapse">
+   <br/>
+   <ul>
+   <li><b>User Mode:</b> Attempt quiz the way normal users will attempt i.e. -
+   <ul>
+   <li><i>Quiz will have the same duration as that of the original quiz.</li>
+   <li>Quiz won't start if the course is inactive or the quiz time has expired.</li>
+   <li>You will be notified about quiz prerequisites.(You can still attempt the quiz though)</i></li>
+   </ul>
+   </p>
+   <li> <b>God Mode:</b> Attempt quiz without any time or eligibilty constraints.</p>
+   </div>
+ {% endif %}
+ <style type="text/css">
+   #rendered_text{
+    width: 550px;
+   }
+ </style>
+{% endblock %}
