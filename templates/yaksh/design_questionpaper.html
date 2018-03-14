@@ -1,0 +1,116 @@
+{% extends "manage.html" %}
+
+{% block title %} Design Question Paper {% endblock title %}
+
+{% block subtitle %} Design Question Paper {% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" media="all" type="text/css" href="{{ URL_ROOT }}/static/yaksh/css/question_paper_creation.css" />
+<style>
+select
+{
+    width:auto;
+}
+</style>
+{% endblock %}
+
+{% block script %}
+    <script src="{{ URL_ROOT }}/static/yaksh/js/jquery-1.9.1.min.js"></script>
+    <script src="{{ URL_ROOT }}/static/yaksh/js/bootstrap.js"></script>
+    <script src="{{ URL_ROOT }}/static/yaksh/js/bootstrap-tabs.js"></script>
+    <script src="{{ URL_ROOT }}/static/yaksh/js/question_paper_creation.js"></script>
+{% endblock %}
+
+{% block content %}
+<input type=hidden id="url_root" value={{ URL_ROOT }}>
+<form action="{{ URL_ROOT }}/exam/manage/courses/all_quizzes/" method="POST" id="design_q">
+<input class ="btn primary small" type="submit" name="back" id="back" value="Cancel">
+</form>
+<form action="{{ URL_ROOT }}/exam/manage/designquestionpaper/" method="POST" id="design_q">
+<center><b>Manual mode to design the {{lang}}  Question Paper</center><br>
+    <ul class="nav nav-tabs tabs" data-tabs="tabs">
+    <li class="active" id="fixed-tab">
+        <a href="#fixed-questions" id="fixed">
+            STEP 1<br>
+            Add Fixed Questions
+        </a>
+    </li>
+    <li id="random-tab">
+        <a href="#random-questions" id="random">
+            STEP 2<br>
+            Add Random Questions
+        </a>
+    </li>
+    <li id="finish-tab">
+    <a href="#finish" id="finished">
+        STEP 3<br>
+        Finish
+    </a></li>
+</ul>
+    <div>
+        <h3>Total Marks:  <span id="total_marks" class="well"> {{ qpaper.total_marks }} </span></h3>
+    </div>
+<div class="tab-content">
+    <!-- common to fixed and random questions -->
+    <div class="row" id="selectors">
+        <h5 style="padding-left: 20px;">Please select Question type and Marks</h5>
+        <div class="col-md-6" style="width: 50">
+            {{ filter_form.question_type }}
+        </div>
+        <div class="col-md-6">
+     
+        </div>
+    </div> <!-- /.row -->
+    <br><br>
+
+        <div class="tab-pane active" id="fixed-questions">
+        <div class="row">
+            <div class="col-md-6">
+                <div id="fixed-available-wrapper">
+                    <p><u>Select questions to add:</u></p>
+                    <div id="fixed-available">
+                            <ul class="inputs-list">
+                               {% for question in questions %}
+                               {% for q in question %}
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="questions" data-qid="{{q.id}}" value={{q.id}}>
+                                            <span> {{ q.summary }} </span> <span> {{ q.points }} </span>
+                                        </label>
+                                     </li>
+                                {% endfor %}
+                                {% endfor %}
+                            </ul>
+
+                    </div>
+                    <br /><br />
+                    <button id="add-fixed" name="add-fixed" class="btn small primary pull-right" type="submit">Add to paper</button>
+                </div>
+            </div>
+                        <div class="col-md-6">
+                <div id="fixed-added-wrapper">
+                    <p><u>Fixed questions currently in paper:</u></p>
+                    <div id="fixed-added">
+                            <ul class="inputs-list">
+                               {% for question in fixed_questions %}
+                               {% for q in question %}
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="added-questions"
+                                            data-qid="{{q.id}}" value={{q.id}}>
+                                            <span> {{ q.summary }} </span>
+                                            <span> {{ q.points }} </span>
+                                        </label>
+                                     </li>
+                                {% endfor %}
+                                {% endfor %}
+                            </ul>
+                    </div>
+                     <br />
+                    <button id="remove-fixed" name="remove-fixed" class="btn small primary pull-right" type="submit"> Remove from paper</button>
+                </div>
+            </div>
+</form>
+{% endblock %}
+{% block manage %}
+{% endblock %}

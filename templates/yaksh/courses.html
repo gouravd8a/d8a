@@ -354,16 +354,16 @@
         </td>
         <td>
             {% for a in quiz| get_questionpaper %}
-            {%if a %}
                 <a href="{{URL_ROOT}}/exam/manage/designquestionpaper/{{ quiz.id }}/{{a.id}}/">
                 Question Paper for {{ quiz.description }}</a>
                 <br>
-            {% else %}
+                 {% endfor %}
+            {% if not quiz| get_questionpaperstatus %}
                 <p>No Question Paper 
                 <a href="#" onClick='location.replace("{{URL_ROOT}}/exam/manage/quiz/designquestionpaper/{{ quiz.id }}/");'>Add</a>
                 </p>
             {% endif %}
-            {% endfor %}
+           
         </td>
         {% endfor %} <!-- end for quizzes -->
         </tr>
