@@ -5,6 +5,29 @@ from pytz import timezone
 import pytz
 
 days_between_attempts = [(j, j) for j in range(401)]
+
+languages = (
+    ("select", "Select Language"),
+    ("python", "Python"),
+    ("bash", "Bash"),
+    ("c", "C Language"),
+    ("cpp", "C++ Language"),
+    ("java", "Java Language"),
+    ("scilab", "Scilab"),
+)
+
+question_types = (
+    ("select", "Select Question Type"),
+    ("mcq", "Multiple Choice"),
+    ("mcc", "Multiple Correct Choices"),
+    ("code", "Code"),
+    ("upload", "Assignment Upload"),
+    ("integer", "Answer in Integer"),
+    ("string", "Answer in String"),
+    ("float", "Answer in Float"),
+)
+
+
 class UserLoginForm(FlaskForm):
     """Creates a form which will allow the user to log into the system."""
 
@@ -33,6 +56,14 @@ class CourseForm(FlaskForm):
     instructions = TextAreaField([validators.required(), validators.length(max=500)])
     start_enroll_time = DateTimeField(default=datetime.now())
     end_enroll_time = DateTimeField(default=datetime(2199, 1, 1))
+
+
+class QuestionFilterForm(FlaskForm):
+
+    marks = SelectField(coerce=int,choices =[])
+    language = SelectField(choices = languages)
+    question_type = SelectField(choices=question_types)
+
 
 
 class QuizForm(FlaskForm):

@@ -1,5 +1,6 @@
 from flask import Flask,request,render_template,redirect,url_for,flash
-from forms import UserLoginForm,CourseForm,QuizForm,UserRegisterForm
+from forms import UserLoginForm,CourseForm,QuizForm,UserRegisterForm,QuestionFilterForm
+from wtforms import DateTimeField
 import sqlite3 as sql
 from datetime import datetime
 from textwrap import dedent
@@ -30,7 +31,7 @@ def user_login():
     				if ismoderator(conn,uid):
     					return redirect(url_for('moderator_dashboard'))
     				else:
-    					return render_template('yaksh/hello2.html',user = user)
+    					return redirect(url_for('quizlist_user'))
 
     form = UserLoginForm()
     return render_template('yaksh/login.html', form=form)
@@ -67,6 +68,14 @@ def user_register():
     form= UserRegisterForm()
     return render_template('yaksh/register.html',form = form)
 
+@app.route('/exam/quizzes')
+def quizlist_user():
+
+	flash('You were successfully logged in')
+	conn1 = sql.connect('db.sqlite3')
+	conn1.row_factory = sql.Row
+	course = conn1.execute("select * from yaksh_course")
+	return render_template('yaksh/quizzes_user.html',courses=course)
 
 @app.route('/exam/manage')
 def moderator_dashboard():
@@ -77,7 +86,13 @@ def moderator_dashboard():
 	course = conn1.execute("select * from yaksh_course")
 	return render_template('yaksh/moderator_dashboard.html',course=course,user="Teacher")
 
-@app.route('/exam/manage/courses/all_quizzes/')
+
+@app.route('/exam/course_modules/<cid>')
+def course_module(cid):
+
+	return render_template('yaksh/course_modules.html')
+
+@app.route('/exam/manage/courses/all_quizzes/',methods = ['POST', 'GET'])
 def show_all_quizzes():
 	conn1 = sql.connect('db.sqlite3')
 	conn1.row_factory = sql.Row
@@ -126,6 +141,71 @@ def add_quiz():
 	form = QuizForm()
 	return render_template('yaksh/add_quiz.html',form = form)
 
+
+
+@app.route('/exam/manage/designquestionpaper/<qid>/<qpid>/')
+def design_questionpaper(qid,qpid):
+
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?",(qid,))
+	for record in records:
+		qpaper = record
+	point_options= []
+	questions = []
+	questions2 = []
+	qu = []
+	records2 = conn.execute("select distinct(points) as p from yaksh_question")
+	for record2 in records2:
+		point_options.append(record2['p'])
+	filter_form = QuestionFilterForm()
+	filter_form.marks.choices = point_options
+	question = conn.execute("select * from yaksh_questionpaper_fixed_questions where questionpaper_id = ?",(qpid,))
+	for q in question:
+		quesno = q['question_id']
+		question1 = conn.execute("select * from yaksh_question where id = ?",(quesno,))
+		questions.append(question1)
+	question2 = conn.execute("select * from yaksh_questionpaper_fixed_questions where questionpaper_id = ?",(qpid,))
+	for q1 in question2:
+		quesno2 = q1['question_id']
+		qu.append(quesno2)
+	return render_template('yaksh/design_questionpaper.html',qpaper=qpaper,filter_form=filter_form,questions=questions2,fixed_questions=questions)
+
+
+@app.route('/exam/manage/addquiz/<qid>/')
+def edit_quiz(qid):
+
+	form = QuizForm()
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select * from yaksh_quiz where id = ?",(qid,))
+	for record in records:
+		start_date_time = record['start_date_time']
+		end_date_time = record['end_date_time']
+		duration = record['duration']
+		active = record['active']
+		description = record['description']
+		pass_criteria = record['pass_criteria']
+		attempts_allowed = record['attempts_allowed']
+		time_between_attempts = record['time_between_attempts']
+		view_answerpaper = record['view_answerpaper']
+		allow_skip = record['allow_skip']
+		weightage = record['weightage']
+	
+	form.start_date_time = start_date_time
+	form.end_date_time = end_date_time
+	form.description.data = description
+	form.duration.data = duration 
+	form.active.data = active 
+	form.pass_criteria.data = pass_criteria 
+	form.attempts_allowed.data = attempts_allowed 
+	form.time_between_attempts.data = time_between_attempts 
+	form.view_answerpaper.data = view_answerpaper 
+	form.allow_skip.data = allow_skip 
+	form.weightage.data = weightage 
+
+	return render_template('yaksh/add_quiz.html',form = form)
+
 @app.template_filter('get_questionpaper')
 def get_question_paper(quiz):
 	conn = sql.connect('db.sqlite3')
@@ -133,6 +213,19 @@ def get_question_paper(quiz):
 	qid = quiz['id']
 	records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?",(qid,))
 	return records
+
+@app.template_filter('get_questionpaperstatus')
+def get_question_paper_status(quiz):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	qid = quiz['id']
+	records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?",(qid,))
+	for record in records:
+		if record:
+			return True
+		else:
+			return False
+
 
 
 @app.template_filter('course_details')
@@ -184,6 +277,8 @@ def get_total_students(quiz,cid):
 		for t in tot:
 			tot1 = tot1 + t['c']
 	return tot1
+
+
 
 
 def get_passed_students(quiz,cid):
