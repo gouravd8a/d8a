@@ -68,14 +68,14 @@ def user_register():
     form= UserRegisterForm()
     return render_template('yaksh/register.html',form = form)
 
-@app.route('/exam/quizzes')
+@app.route('/exam/quizzes/')
 def quizlist_user():
 
 	flash('You were successfully logged in')
 	conn1 = sql.connect('db.sqlite3')
 	conn1.row_factory = sql.Row
 	course = conn1.execute("select * from yaksh_course")
-	return render_template('yaksh/quizzes_user.html',courses=course)
+	return render_template('yaksh/quizzes_user.html',courses=course,user="Student",title="All Courses")
 
 @app.route('/exam/manage')
 def moderator_dashboard():
@@ -89,9 +89,19 @@ def moderator_dashboard():
 
 @app.route('/exam/course_modules/<cid>')
 def course_module(cid):
-
-	return render_template('yaksh/course_modules.html')
-
+	lmod = []
+	conn1 = sql.connect('db.sqlite3')
+	conn1.row_factory = sql.Row
+	course = conn1.execute("select * from yaksh_course where id =?",(cid,))
+	for course1 in course:
+		c = course1
+	lmodule = conn1.execute("select * from yaksh_course_learning_module where course_id = ?",(cid,))
+	for l in lmodule:
+		lid = l['learningmodule_id']
+		record = conn1.execute("select * from yaksh_learningmodule where id = ?",(lid,))
+		lmod.append(record)
+	print(lmod)
+	return render_template('yaksh/course_modules.html',course=c,learning_modules=lmod)
 @app.route('/exam/manage/courses/all_quizzes/',methods = ['POST', 'GET'])
 def show_all_quizzes():
 	conn1 = sql.connect('db.sqlite3')
@@ -206,6 +216,22 @@ def edit_quiz(qid):
 
 	return render_template('yaksh/add_quiz.html',form = form)
 
+@app.template_filter('get_creator_name')
+def get_creator_name(course):
+	name= []
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	cid = course['id']
+	records = conn.execute("select * from yaksh_course where id = ?",(cid,))
+	for record in records:
+		crid = 3
+	print(crid)
+	records = conn.execute("select * from auth_user where id = ?",(crid,))
+	for record in records:
+		name.append(record['first_name']+" "+record['last_name'])
+	return name
+
+
 @app.template_filter('get_questionpaper')
 def get_question_paper(quiz):
 	conn = sql.connect('db.sqlite3')
@@ -226,6 +252,106 @@ def get_question_paper_status(quiz):
 		else:
 			return False
 
+@app.template_filter('get_module_status')
+def get_module_status(mid):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	stat =[]
+	tmod= 0
+	cmod =0
+	records = conn.execute("select * from yaksh_learningmodule_learning_unit where learningmodule_id = ?",(mid,))
+	for record in records:
+		tmod=tmod+1
+		lid = record['learningunit_id']
+		records2 =conn.execute("select * from yaksh_coursestatus where current_unit_id = ?",(lid,))
+		for record2 in records2:
+			if record2:
+				csid = record2['id']
+				records3 = conn.execute("select * from yaksh_coursestatus_completed_units where learningunit_id = ? and coursestatus_id = ?",(lid,csid,))
+				for record3 in records3:
+					cmod=cmod+1
+
+	if tmod == 0:
+		status= "not attempted"
+	elif tmod == cmod:
+		staus =" completed"
+	else:
+		status = "inprogress"
+	stat.append(status)
+	return stat
+
+
+@app.template_filter('get_unit_status')
+def get_unit_status(lid):
+
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	stat =[]
+	tmod= 0
+	cmod =0
+	records2 =conn.execute("select * from yaksh_coursestatus where current_unit_id = ?",(lid,))
+	for record2 in records2:
+		tmod = tmod+1
+		if record2:
+			csid = record2['id']
+			records3 = conn.execute("select * from yaksh_coursestatus_completed_units where learningunit_id = ? and coursestatus_id = ?",(lid,csid,))
+			for record3 in records3:
+				cmod=cmod+1
+
+	if tmod == 0:
+		print("hi")
+		status= "not attempted"
+	elif tmod == cmod:
+		status ="completed"
+	else:
+		status ="inprogress"
+
+	
+	stat.append(status)
+	return stat
+
+@app.template_filter('get_learning_units')
+def get_learning_units(mid):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	lunits = []
+	records = conn.execute("select * from yaksh_learningmodule_learning_unit where learningmodule_id = ?",(mid,))
+	for record in records:
+
+		lid = record['learningunit_id']
+		records2 = conn.execute("select * from yaksh_learningunit where id = ?",(lid,))
+		for record2 in records2:
+			lunits.append(record2)
+
+
+	return lunits
+
+
+@app.template_filter('get_description')
+def get_description(qid):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select * from yaksh_quiz where id = ?",(qid,))
+	return records
+
+
+@app.template_filter('is_exercise')
+def is_exercise(qid):
+	ex = []
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select * from yaksh_quiz where id = ?",(qid,))
+	for record in records:
+		ex.append(record['is_exercise'])
+	return ex
+
+
+@app.template_filter('get_lesson')
+def get_lesson(lid):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select * from yaksh_lesson where id = ?",(lid,))
+	return records
 
 
 @app.template_filter('course_details')
