@@ -32,9 +32,11 @@ No Courses to display
         <div class="row">
             <div class="col-md-4">
                 <h4><b>
+                    {% for cou in course|get_creator_name %}
                     <a href="{{URL_ROOT}}/exam/course_modules/{{course.id}}">
-                    {{ course.name }} by 
+                    {{ course.name }} by {{cou}}
                     </a>
+                    {% endfor %}
                 </b></h4>
             </div>
             <div class="col-md-4">
