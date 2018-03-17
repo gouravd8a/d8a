@@ -150,7 +150,7 @@ def has_questions(qpid):
 	return "false"
 
 
-def show_question(question,last_attempt,cid,mid,qpid,quiz,previous_question = None):
+def show_question(question,last_attempt,cid,mid,qpid,quiz,time_left,previous_question = None):
 	quiz_type = 'Exam'
 	can_skip = False
 	if previous_question:
@@ -170,7 +170,7 @@ def show_question(question,last_attempt,cid,mid,qpid,quiz,previous_question = No
 		return complete()
 
 	if not quiz['is_exercise']:
-		if paper.time_left() <= 0:
+		if time_left(paper) <= 0:
 			reason = 'Your time is up!'
 			return complete()
 	else:
@@ -179,8 +179,28 @@ def show_question(question,last_attempt,cid,mid,qpid,quiz,previous_question = No
 		notification = (  'You have already attempted this question successfully'
             if question['type'] == "code" else
             'You have already attempted this question')
-	return "hi"
-          
+
+	all_modules = []
+	conn1 = sql.connect('db.sqlite3')
+	conn1.row_factory = sql.Row
+	records = conn1.execute("select * from yaksh_course_learning_module where course_id = ?",(cid,))
+	for r in records:
+		ycm = r['learningmodule_id']
+		record = conn1.execute("select * from yaksh_learningmodule where id = ?",(ycm,))
+		for rec in record:
+			all_modules.append(rec)
+	has_unanswered = has_unanswered_questions(last_attempt)
+	records = conn1.execute("select * from yaksh_course where id =?",(cid,))
+	for rec in records:
+		course = rec
+		test_cases = get_test_cases(question)
+	records = conn1.execute("select * from yaksh_learningmodule where id = ?",(mid,))
+	for rec in records:
+		module = rec
+	if 'notification' in locals():
+		return render_template('yaksh/question.html',paper= last_attempt,time_left= time_left,test_cases=test_cases,question =question,quiz = quiz,notification = notification,last_attempt= question['snippet'],course= course,module= module, can_skip = can_skip, delay_time= delay_time,quiz_type = quiz_type,all_modules= all_modules,has_unanswered =has_unanswered)
+	else:
+		return render_template('yaksh/question.html',paper= last_attempt,time_left=time_left,test_cases=test_cases,question =question,quiz = quiz,last_attempt= question['snippet'],course= course,module= module, can_skip = can_skip, delay_time= delay_time,quiz_type = quiz_type,all_modules= all_modules,has_unanswered = has_unanswered)     
 
      
 @app.route('/exam/start/<qpid>/<mid>/<cid>/<attempt_num>')
@@ -203,22 +223,58 @@ def start(qpid,mid,cid,attempt_num=None):
 		status1= expired(quiz)
 		if status1 == "yes":
 			return view_module(mid = mid,cid = cid ,msg="Quiz has expired.")
-	last_attempt=get_user_last_attempt(qpid,userid,cid)
+	last_attempt=get_user_last_attempt(qpid,userid)
 	if last_attempt and is_attempt_inprogress(last_attempt):
-		print("hi")
+		tleft = time_left(last_attempt)
 		return show_question(
             question =current_question(last_attempt), last_attempt=last_attempt,
-            cid = cid,mid =mid, qpid =qpid,quiz=quiz,
-            previous_question=current_question(last_attempt)
-        )
+            cid = cid,mid =mid, qpid =qpid,quiz=quiz,time_left=tleft,
+            previous_question=current_question(last_attempt))
+	if can_attempt_now(qpid, cid,userid,quiz) == "false":
+		msg = "You cannot attempt {0} quiz more than {1} time(s)".format(
+            quiz['description'], quiz['attempts_allowed'])
+		return view_module(mid =mid, cid =cid ,msg =msg)
+
+	if not last_attempt:
+		attempt_number = 1
+	else:
+		attempt_number = last_attempt['attempt_number'] + 1
+
+	if attempt_num == None and quiz['is_exercise'] == "false":
+		attempt_num = attempt_number
+
 	timezone = pytz.utc
-	return render_template('yaksh/intro.html',question_paper = question_paper,quiz= quiz,timezone = timezone,user = "Student",qpid= qpid, mid =mid,cid =cid)
+	return render_template('yaksh/intro.html',attempt_number = attempt_num,question_paper = question_paper,quiz= quiz,timezone = timezone,user = "Student",qpid= qpid, mid =mid,cid =cid)
+
+def is_attempt_allowed(qpid,userid,quiz):
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	records = conn.execute("select count(*) as c from yaksh_answerpaper where question_paper_id = ? and user_id = ?",(qpid,userid,))
+	for record in records:
+		cou = record['c']
+	if quiz['attempts_allowed'] == cou:
+		return "false"
+	else:
+		return "true"
+
+def can_attempt_now(qpid,cid,userid,quiz):
+
+	if is_attempt_allowed(qpid,userid,quiz) == "true":
+		last_attempt=get_user_last_attempt(qpid,userid)
+		if last_attempt:
+			time_lag = (datetime.now() - datetime.strptime(last_attempt['start_time'],'%Y-%m-%d %H:%M:%S')).days
+			return time_lag >= quiz['time_between_attempts']
+		else:
+			return "true"
+	else:
+		return "false"
 
 
-def get_user_last_attempt(qpid,userid,cid):
+
+def get_user_last_attempt(qpid,userid):
 	conn1 = sql.connect('db.sqlite3')
 	conn1.row_factory = sql.Row
-	records = conn1.execute("select * from yaksh_answerpaper where question_paper_id = ? and course_id = ? and user_id = ? order by attempt_number desc",(qpid,cid,userid,))
+	records = conn1.execute("select * from yaksh_answerpaper where question_paper_id = ? and user_id = ? order by attempt_number desc",(qpid,userid,))
 	for record in records:
 		last_attempt = record
 		return last_attempt
@@ -226,6 +282,29 @@ def get_user_last_attempt(qpid,userid,cid):
 def is_attempt_inprogress(attempt):
     if attempt['status'] == 'inprogress':
         return time_left(attempt) > 0
+
+
+def get_test_cases(question):
+	conn1 = sql.connect('db.sqlite3')
+	conn1.row_factory = sql.Row
+	qid = question['id']
+	tc = []
+	records = conn1.execute("select * from yaksh_testcase where question_id = ?",(qid,))
+	for record in records:
+		tid = record['id']
+		records2 = conn1.execute("select * from yaksh_mcqtestcase where testcase_ptr_id = ?",(tid,))
+		for record2 in records2:
+			tc.append(record2)
+
+	return tc
+    
+    
+    		
+
+    
+    
+
+
 
 def time_left(attempt):
 
@@ -286,6 +365,24 @@ def questions_answered(attempt):
     	questions1.append(record2['question_id'])
     return questions1
 
+
+
+def has_unanswered_questions(attempt):
+	conn1 = sql.connect('db.sqlite3')
+	conn1.row_factory = sql.Row
+	apid = attempt['id']
+	records2 = conn1.execute("select * from yaksh_answerpaper_questions_unanswered where answerpaper_id = ?",(apid,))
+	for record2 in records2:
+		return "true"
+	return "false"
+
+
+
+    
+    	
+    
+
+
 def get_current_question(attempt,questions):
 
     conn1 = sql.connect('db.sqlite3')
@@ -309,8 +406,9 @@ def get_total_seconds(attempt):
 
 	t = str(datetime.now())
 	nowtime = t[0:t.find(".")]
-	dt = datetime.strptime( attempt['end_time'],'%Y-%m-%d %H:%M:%S') - datetime.strptime(attempt['start_time'],'%Y-%m-%d %H:%M:%S')
+	dt = datetime.strptime( nowtime,'%Y-%m-%d %H:%M:%S') - datetime.strptime(attempt['start_time'],'%Y-%m-%d %H:%M:%S')
 	secs = dt.seconds + dt.days*24*3600
+	print(secs)
 	return secs
 
 
@@ -510,6 +608,43 @@ def get_creator_name(course):
 		name.append(record['first_name']+" "+record['last_name'])
 	return name
 
+@app.template_filter('get_questions_unanswered')	
+def get_questions_unanswered(attempt,qid):
+
+    conn1 = sql.connect('db.sqlite3')
+    conn1.row_factory = sql.Row
+    apid = attempt['id']
+    questions1 =[]
+    sta =[]
+    records2 = conn1.execute("select * from yaksh_answerpaper_questions_unanswered where answerpaper_id = ?",(apid,))
+    for record2 in records2:
+    	questions1.append(record2['question_id'])
+
+    if qid['id'] in questions1:
+    	sta.append("true")
+    	return sta
+    else:
+    	sta.append("false")
+    	return sta
+
+@app.template_filter('get_questions_answered')	
+def get_questions_answered(attempt,qid):
+
+    conn1 = sql.connect('db.sqlite3')
+    conn1.row_factory = sql.Row
+    apid = attempt['id']
+    questions1 =[]
+    sta =[]
+    records2 = conn1.execute("select * from yaksh_answerpaper_questions_answered where answerpaper_id = ?",(apid,))
+    for record2 in records2:
+    	questions1.append(record2['question_id'])
+
+    if qid['id'] in questions1:
+    	sta.append("true")
+    	return sta
+    else:
+    	sta.append("false")
+    	return sta
 
 @app.template_filter('get_questionpaper')
 def get_question_paper(quiz):
@@ -584,6 +719,18 @@ def has_file(lid):
 	stat.append("false")
 	return stat
 
+@app.template_filter('get_all_ordered_questions')	
+def get_all_ordered_questions(paper):
+	ordered_question_ids = [int(q) for q in paper['questions_order'].split(',')]
+	conn = sql.connect('db.sqlite3')
+	conn.row_factory = sql.Row
+	questions = []
+	for qid in ordered_question_ids:
+		records = conn.execute("select * from yaksh_question where id =?",(qid,))
+		for record in records:
+			questions.append(record)
+	return questions
+
 
 @app.template_filter('get_file_name')
 def get_file_name(lid):
@@ -594,6 +741,19 @@ def get_file_name(lid):
 	for r in record:
 		stat.append(r['file'])
 	return stat
+@app.template_filter('questions_left')
+def questions_left(attempt):
+
+    conn1 = sql.connect('db.sqlite3')
+    conn1.row_factory = sql.Row
+    apid = attempt['id']
+    no = []
+    questions1 =[]
+    records2 = conn1.execute("select * from yaksh_answerpaper_questions_unanswered where answerpaper_id = ?",(apid,))
+    for record2 in records2:
+    	questions1.append(record2['question_id'])
+    no.append(len(questions1))
+    return no
 
 @app.template_filter('get_questionpaperstatus')
 def get_question_paper_status(quiz):
