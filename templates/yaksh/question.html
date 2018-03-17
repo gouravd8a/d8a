@@ -1,7 +1,6 @@
 {% extends "exam.html" %}
-{% load custom_filters %}
 
-{% block pagetitle %} {{ paper.question_paper.quiz.description }} {% endblock pagetitle %}
+{% block pagetitle %} {{ quiz.description }} {% endblock pagetitle %}
 {% block css %}
 <link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/dashboard.css" type="text/css" />
 <link rel="stylesheet" href="{{ URL_ROOT }}/static/yaksh/css/question.css" type="text/css" />
@@ -22,7 +21,8 @@
 <script src="{{ URL_ROOT }}/static/yaksh/js/codemirror/mode/shell/shell.js"></script>
 <script src="{{ URL_ROOT }}/static/yaksh/js/mathjax/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 <script>
-init_val = '{{ last_attempt|escape_quotes|safe }}';
+    alert({{time_left}});
+init_val = "{{last_attempt|safe}}"
 lang = "{{ question.language }}"
 course_id = "{{course.id}}"
 module_id = "{{module.id}}"
@@ -30,8 +30,8 @@ is_exercise = "{{ quiz.is_exercise }}"
 can_skip = "{{ can_skip }}"
 delay_time = new Number("{{ delay_time }}")
 
-var time_left = {{ paper.time_left }}
-{% if quiz.is_exercise %}
+var time_left = {{ time_left }}
+{% if quiz.is_exercise =="true" %}
     time_left = {{ delay_time }}
 {% endif %}
 
@@ -52,6 +52,7 @@ function getTimeRemaining(endtime){
 
 function updateTime()
 {
+  alert("hi");
 var timeInSeconds = time_left;
 var currentTime = Date.parse(new Date());
 var deadline = new Date(currentTime + timeInSeconds*1000);
@@ -78,11 +79,11 @@ function updateClock(){
     }
   }
 var clock = document.getElementById("time_left");
+clock.innerHTML = "hi"
 updateClock();
 var timeinterval = setInterval(updateClock,1000);
 
 }
-
 function validate(){
     uploaded_file = document.getElementById("assignment").value;
     if(uploaded_file == ""){
@@ -94,11 +95,12 @@ function validate(){
 
 function call_skip(url)
 {
+
     form = document.forms["code"]
     form.action = url
     form.submit();
 }
-init_val = '{{ last_attempt|escape_quotes|safe }}';
+init_val = '{{ last_attempt|safe }}';
 lang = "{{ question.language }}"
 course_id = "{{course.id}}"
 module_id = "{{module.id}}"
@@ -120,22 +122,26 @@ question_type = "{{ question.type }}"
         <b><u><a href="{{URL_ROOT}}/exam/quizzes/view_module/{{learning_module.id}}/{{course.id}}">{{learning_module.name}}</u></b>
         </a>
         <ul class="list">
-        {% for unit in learning_module.get_learning_units %}
+        {% for unit in learning_module.id|get_learning_units %}
         <span>
         <li>
-        {% get_unit_status course learning_module unit user as status %}
+        {% for status in unit.id | get_unit_status%}
 
-        {% if unit.quiz.id == paper.question_paper.quiz.id %}
+        {% if unit.quiz_id == quiz.id %}
             <span class="glyphicon glyphicon-edit" data-toggle="tooltip" title="Currently on">
             </span>
         {% endif %}
         {% if unit.type == "quiz" %}
-            <a href="{{ URL_ROOT }}/exam/start/{{unit.quiz.questionpaper_set.get.id}}/{{learning_module.id}}/{{course.id}}">
-                {{ unit.quiz.description }}
+            <a href="{{ URL_ROOT }}/exam/start/{{paper.question_paper_id}}/{{learning_module.id}}/{{course.id}}">
+                 {% for desc in unit.quiz_id |get_description %}
+                    {{desc.description}}
+                    {% endfor %}
             </a>
         {% else %}
-            <a href="{{ URL_ROOT }}/exam/show_lesson/{{unit.lesson.id}}/{{learning_module.id}}/{{course.id}}">
-                {{ unit.lesson.name }}
+            <a href="{{ URL_ROOT }}/exam/show_lesson/{{unit.id}}/{{learning_module.id}}/{{course.id}}">
+                                {% for lesson in unit.lesson_id |get_lesson %}
+                    {{lesson.name}}
+                    {% endfor %}
             </a>
         {% endif %}
         {% if status == "completed" %}
@@ -143,6 +149,7 @@ question_type = "{{ question.type }}"
         {% else %}
           <span class="glyphicon glyphicon-remove" style="color:  #FF0000"></span>
         {% endif %}
+        {% endfor %}
         </li>
         </span>
         {% endfor %}
@@ -151,8 +158,7 @@ question_type = "{{ question.type }}"
 {% endblock %}
 
 {% block main %}
-        <form id="code" action="{{URL_ROOT}}/exam/{{ question.id }}/check/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper.id }}/{{course.id}}/" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+        <form id="code" action="{{URL_ROOT}}/exam/{{ question.id }}/check/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/" method="post" enctype="multipart/form-data">
         <input type=hidden name="question_id" id="question_id" value={{ question.id }}></input>
             <div class="panel panel-default">
                   <div class="panel-heading">
@@ -183,12 +189,7 @@ question_type = "{{ question.type }}"
                         <font class=pull-right>(Marks : {{ question.points }}) </font>
                       </h4>
                       <font size=3 face=arial> {{ question.description|safe }} </font>
-                      {% if files %}
-                      <h4>Files to download for this question</h4>
-                      {% for f_name in files %}
-                      <h5><a href="{{f_name.file.url}}">{{f_name.file.name}}</a></h5>
-                      {% endfor %}
-                      {% endif %}
+                      
                 </div>
                 <br/>
                         {% if quiz.is_exercise %}
@@ -275,17 +276,17 @@ question_type = "{{ question.type }}"
            <button class="btn btn-primary" type="submit" name="check" id="check" >Check Answer <span class="glyphicon glyphicon-cog"></span></button>&nbsp;&nbsp;
            {% endif %}
          {% endif %}
-         {% if quiz.is_exercise %}
-         {% if can_skip %}
-             <button id="skip_ex" class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper.id }}/{{course.id}}/')" name="skip"> Next <span class="glyphicon glyphicon-arrow-right"></span></button>
+         {% if quiz.is_exercise =="true" %}
+         {% if can_skip =="true" %}
+             <button id="skip_ex" class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')" name="skip"> Next <span class="glyphicon glyphicon-arrow-right"></span></button>
          {% else %}
-             <button id="skip_ex" class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper.id }}/{{course.id}}/')" name="skip" style="visibility:hidden"> Next <span class="glyphicon glyphicon-arrow-right"></span></button>
+             <button id="skip_ex" class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')" name="skip" style="visibility:hidden"> Next <span class="glyphicon glyphicon-arrow-right"></span></button>
         {% endif %}
         {% endif %}
 
-         {% if paper.question_paper.quiz.allow_skip and not paper.get_questions_unanswered|length_is:"1" %}
-         {% if question in paper.get_questions_unanswered %}
-         <button class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper.id }}/{{course.id}}/')" name="skip" id="skip">Attempt Later <span class="glyphicon glyphicon-arrow-right"></span></button>
+         {% if quiz.allow_skip == "true" %}
+         {% if question  %}
+         <button class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.id }}/{{course.id}}/')" name="skip" id="skip">Attempt Later <span class="glyphicon glyphicon-arrow-right"></span></button>
          {% endif %}
          {% endif %}
        </div>
@@ -330,8 +331,4 @@ question_type = "{{ question.type }}"
       </div>
    </div>
 {% endblock main %}
-{% if user %}
-  {% block info %}
-  <h5>{{user.get_full_name|title}}({{user.profile.roll_number}}) Logged in as {{user.username}}</h5>
-  {% endblock %}
-{% endif %}
+
