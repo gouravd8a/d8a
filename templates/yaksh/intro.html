@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block pagetitle %} OnlineTest Instructions and Rules
+<h3> Important instructions & rules </h3>
+{% endblock pagetitle %}
+{% block content %}
+
+         {% for status in quiz| is_expired %}
+         {% if status =="yes" %}
+              <div class="alert alert-error">
+                  This Quiz has expired. You can no longer attempt this Quiz.
+              <br/>
+              </div>
+         {% else %}
+              <div class="alert">
+                  You can attempt this Quiz at any time between {{ quiz.start_date_time }} {{ timezone }} and {{ quiz.end_date_time }} {{ timezone }}
+                  <br/>
+                  You are not allowed to attempt the Quiz before or after this duration
+              <br/>
+              </div>
+         {% endif %}
+         {% endfor %}
+          <p> Welcome <strong>{{user}}{{user}}</strong>, to the programming quiz! </p>
+          {{ quiz.description|safe }}
+        <div class="row">
+            <div class="col-md-6">
+              <center>
+                {% if user != "moderator" %}
+                    <a href="{{URL_ROOT}}/exam/quizzes/view_module/{{mid}}/{{cid}}" class="btn btn-primary" name="home">
+                    <span class=" glyphicon glyphicon-arrow-left">
+                    </span>
+                    Go Back</a>
+                {% else %}
+                    <a href="{{URL_ROOT}}/exam" class="btn btn-primary" name="home">
+                    <span class=" glyphicon glyphicon-arrow-left">
+                    </span>
+                    Go Back</a>
+                {% endif %}
+              </center>
+            </div>
+            <div class="col-md-6">
+                           {% for status in quiz| is_expired %}
+         {% if status =="no" %}
+                      <form action="{{URL_ROOT}}/exam/start/{{ attempt_num }}/{{mid}}/{{ qpid }}/{{cid}}/" method="post" align="center">
+                       <center><button class="btn btn-success" type="submit" name="start"> Start Exam <span class="glyphicon glyphicon-chevron-right"></span></button></center>
+                      </form>
+                  {% endif %}
+                  {% endfor %}
+            </div>
+        </div>
+{% endblock content %}
