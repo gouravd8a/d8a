@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block pagetitle %} <img src="{{ URL_ROOT }}/static/yaksh/images/yaksh_text.png"
+width="80" alt="YAKSH"></img> {% endblock %}
+{% block content %}
+<center><table class="table table-bordered" >
+        <caption> <center><h3>Submission Status</h3> </center> </caption>
+        <thead>
+            <tr>
+                <th> Question</th>
+                <th> State </th>
+            </tr>
+        </thead>
+
+        {% for question in paper|allquestions %}
+            <tbody>
+                {% for status in paper|get_questions_answered(question) %}
+                {% if status == "true" %}
+                    <tr class="info">
+                    <td> {{ question.summary }} </td>
+                    <td> Attempted </td>
+                {% else %}
+                    <tr class="danger">
+                    <td> {{ question.summary }} </td>
+                    <td> Not completed </td>
+                {% endif %}
+                {% endfor %}
+                </tr>
+            </tbody>
+        {% endfor %}
+</table></center>
+
+    {% if quiz.is_exercise == "true" %}
+	    <center><h4> Are you sure you wish to quit the Exercise?</h4></center>
+    {% else %}
+        <center><h4>Your current answers are saved.</h4></center>
+        <center><h4> Are you sure you wish to quit the exam?</h4></center>
+        <center><h4> Be sure, as you won't be able to restart this exam.</h4></center>
+    {% endif %}
+	<form action="{{URL_ROOT}}/exam/complete/{{ paper.attempt_number }}/{{module_id}}/{{ question_paper_id }}/{{course_id}}/{{quiz.id}}/" method="post">
+	<center>
+        <button class="btn" type="submit" name="yes">Yes!</button>&nbsp;
+        <button class="btn" type="button" name="no" onClick="window.location='{{ URL_ROOT }}/exam/start/{{ paper_question_paper_id }}/{{module_id}}/{{course_id}}/{{ paper.attempt_number }}/'">No!</button>
+    </center>
+	</form>
+{% endblock content %}

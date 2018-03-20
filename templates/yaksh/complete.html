@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block pagetitle %}<img src="{{ URL_ROOT }}/static/yaksh/images/yaksh_text.png"
+width="80" alt="YAKSH"></img>{% endblock %}
+{% block content %}
+<center><table class="table table-bordered" >
+        <caption> <center><h3>Submission Status</h3> </center></caption>
+        <thead>
+            <tr>
+                <th> Question</th>
+                <th> State </th>
+            </tr>
+        </thead>
+
+        {% for question in paper|allquestions %}
+            <tbody>
+                {% for status in paper|get_questions_answered(question) %}
+                {% if status == "true" %}
+                    <tr class="info">
+                    <td> {{ question.summary }} </td>
+                    <td> Attempted </td>
+                {% else %}
+                    <tr class="danger">
+                    <td> {{ question.summary }} </td>
+                    <td> Not completed </td>
+                {% endif %}
+                {% endfor %}
+                </tr>
+            </tbody>
+        {% endfor %}
+</table></center>
+	<center><h3>{{message}}</h3></center>
+    <center>
+    <br>
+    {% if not module_id %}
+        <br><center><h4>You may now close the browser.</h4></center><br>
+    {% endif %}
+    <a href="{{URL_ROOT}}/exam/quizzes/" id="home" class="btn btn-success"> Home </a>
+    {% if module_id %}
+        {% if first_unit %}
+            <a href="{{URL_ROOT}}/exam/next_unit/{{course_id}}/{{module_id}}/{{learning_unit.id}}/1" class="btn btn-info"> Next
+                <span class="glyphicon glyphicon-chevron-right">
+                </span>
+            </a>
+        {% else %}
+            <a href="{{URL_ROOT}}/exam/next_unit/{{course_id}}/{{module_id}}/{{learning_unit.id}}" class="btn btn-info"> Next
+                <span class="glyphicon glyphicon-chevron-right">
+                </span>
+            </a>
+        {% endif %}
+    {% endif %}
+    </center>
+{% endblock content %}

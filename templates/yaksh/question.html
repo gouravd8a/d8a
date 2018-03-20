@@ -192,8 +192,8 @@ question_type = "{{ question.type }}"
                       
                 </div>
                 <br/>
-                        {% if quiz.is_exercise %}
-                            {% if can_skip %}
+                        {% if quiz.is_exercise == "true" %}
+                            {% if can_skip == "true" %}
                                 <div class = "well well-sm" id="solution">
                             {% else %}
                                 <div id="solution" style="display:none">
@@ -207,11 +207,11 @@ question_type = "{{ question.type }}"
                  <div class="panel-body">
                      {% if question.type == "mcq" %}
                      {% for test_case in test_cases %}
-                     {% if last_attempt and last_attempt|safe == test_case.id|safe %}
-                     <input name="answer" type="radio" value="{{ test_case.id }}" checked />
+                     {% if last_attempt and last_attempt|safe == test_case.testcase_ptr_id|safe %}
+                     <input name="answer" type="radio" value="{{ test_case.testcase_ptr_id }}" checked />
                         {{ test_case.options|safe }} <br/>
                      {% else %}
-                     <input name="answer" type="radio" value="{{ test_case.id }}" />
+                     <input name="answer" type="radio" value="{{ test_case.testcase_ptr_id }}" />
                         {{ test_case.options|safe }} <br/>
                      {% endif %}
                      {% endfor %}
@@ -247,23 +247,7 @@ question_type = "{{ question.type }}"
                      {% endif %}
                      {% endfor %}
                      {% endif %}
-                     {% if question.type == "upload" %}
-                     <p>Upload assignment file for the said question<p>
-                     <input type=file id="assignment" name="assignment" multiple="">
-                     <hr>
-                     {% endif %}
-                     {% if question.type == "code" %}
-                     <div class="row">
-                         <div class="col-md-9">
-                             <h4>Write your program below:</h4>
-                         </div>
-                         <div class="col-md-3">
-                             <a href="#answer" class="pull-right" onclick="reset_editor()" name="reset" id="reset">Undo Changes&nbsp;<span class="glyphicon glyphicon-refresh"></span></a>
-                             </div>
-                    </div>
-                     <textarea autofocus name="answer" id="answer"></textarea>
-                     <br>
-                     {% endif %}
+                    
         <div class="from-group">
 
          {% if question.type == "mcq" or  question.type == "mcc" or question.type == "integer" or question.type == "float" or question.type ==  "string" %}
@@ -272,7 +256,7 @@ question_type = "{{ question.type }}"
          <br><button class="btn btn-primary" type="submit" name="check" id="check" onClick="return validate();">Upload</button>&nbsp;&nbsp;
 
          {% else %}
-           {% if question in paper.get_questions_unanswered or quiz.is_exercise %}
+           {% if quiz.is_exercise =="true" %}
            <button class="btn btn-primary" type="submit" name="check" id="check" >Check Answer <span class="glyphicon glyphicon-cog"></span></button>&nbsp;&nbsp;
            {% endif %}
          {% endif %}
@@ -286,7 +270,7 @@ question_type = "{{ question.type }}"
 
          {% if quiz.allow_skip == "true" %}
          {% if question  %}
-         <button class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.id }}/{{course.id}}/')" name="skip" id="skip">Attempt Later <span class="glyphicon glyphicon-arrow-right"></span></button>
+         <button class="btn btn-primary"  onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')" name="skip" id="skip">Attempt Later <span class="glyphicon glyphicon-arrow-right"></span></button>
          {% endif %}
          {% endif %}
        </div>

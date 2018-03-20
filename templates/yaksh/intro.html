@@ -39,10 +39,9 @@
               </center>
             </div>
             <div class="col-md-6">
-              {{attempt_number}}
                            {% for status in quiz| is_expired %}
          {% if status =="no" %}
-                      <form action="{{URL_ROOT}}/exam/start/{{ attempt_number }}/{{mid}}/{{ qpid }}/{{cid}}/" method="post" align="center">
+                      <form action="{{URL_ROOT}}/exam/start/{{ qpid }}/{{mid}}/{{cid}}/{{ attempt_number }}/" method="post" align="center">
                        <center><button class="btn btn-success" type="submit" name="start"> Start Exam <span class="glyphicon glyphicon-chevron-right"></span></button></center>
                       </form>
                   {% endif %}
