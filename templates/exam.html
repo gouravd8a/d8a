@@ -17,7 +17,7 @@
           </a>
         </div>
         <div class= "collapse navbar-collapse" id="navbar">
-          <form id="logout" action="{{URL_ROOT}}/exam/quit/{{ paper.attempt_number }}/{{module.id}}/{{ paper.question_paper_id }}/{{course.id}}/" method="post" class="pull-right">
+          <form id="logout" action="{{URL_ROOT}}/exam/quit/{{ paper.attempt_number }}/{{module.id}}/{{ paper.question_paper_id }}/{{course.id}}/{{quiz.id}}" method="post" class="pull-right">
             <ul class="nav navbar-nav navbar">
               <li style="padding: 10px"><button class="btn btn-danger btn-sm" type="submit" name="quit">
                 {% if has_unanswered %}
@@ -47,17 +47,17 @@
                 
                 <li class="active"><a style="width:25%" href="#" data-toggle="tooltip"
                     title="{{ qid.description|striptags }}"
-                    onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ qid.id }}/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')">{{ outer_loop.index }}</a></li>
+                    onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')">{{ outer_loop.index }}</a></li>
                 {% else %}
                 <li><a style="width:25%" href="#" data-toggle="tooltip" title="{{ qid.description|striptags }}"
-                    onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ qid.id }}/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')">{{ outer_loop.index }}</a></li>
+                    onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')">{{ outer_loop.index }}</a></li>
                 {% endif %}
                 {% endif %}
                 {% endfor %}
                 {% for sta in paper|get_questions_answered(qid) %}
                 {% if sta == "true" %}
                 <li><a style="background-color:#B4B8BA; width:25%" href="#" data-toggle="tooltip"
-                onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ qid.id }}/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')"
+                onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')"
                 title="{{ qid.description }}">{{ outer_loop.index }}</a></li>
                 {% endif %}
                 {% endfor %}
@@ -68,7 +68,7 @@
                 {% for q in paper|get_questions_unanswered(qid) %}
                 {% if q == "true" %}
                 <li><a style="background-color:#B4B8BA; width:25%" href="#" data-toggle="tooltip"
-                onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ qid.id }}/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')"
+                onclick="call_skip('{{ URL_ROOT }}/exam/{{ question.id }}/skip/{{ paper.attempt_number }}/{{ module.id }}/{{ paper.question_paper_id }}/{{course.id}}/')"
                 title="{{ qid.description }}">{{ outer_loop.index  }}</a></li>
                 {% else %}
                 <li  class="disabled"><a style="width:25%" data-toggle="tooltip" title="{{ qid.description|striptags }}">{{ outer_loop.index  }}</a></li>
