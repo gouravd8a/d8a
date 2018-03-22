@@ -26,7 +26,7 @@ select
 <form action="{{ URL_ROOT }}/exam/manage/courses/all_quizzes/" method="POST" id="design_q">
 <input class ="btn primary small" type="submit" name="back" id="back" value="Cancel">
 </form>
-<form action="{{ URL_ROOT }}/exam/manage/designquestionpaper/" method="POST" id="design_q">
+<form action="{{ URL_ROOT }}/exam/manage/designquestionpaper/{{quizid}}/{{qpaper.id}}/" method="POST" id="design_q">
 <center><b>Manual mode to design the {{lang}}  Question Paper</center><br>
     <ul class="nav nav-tabs tabs" data-tabs="tabs">
     <li class="active" id="fixed-tab">
@@ -35,15 +35,9 @@ select
             Add Fixed Questions
         </a>
     </li>
-    <li id="random-tab">
-        <a href="#random-questions" id="random">
-            STEP 2<br>
-            Add Random Questions
-        </a>
-    </li>
     <li id="finish-tab">
     <a href="#finish" id="finished">
-        STEP 3<br>
+        STEP 2<br>
         Finish
     </a></li>
 </ul>
@@ -70,15 +64,13 @@ select
                     <p><u>Select questions to add:</u></p>
                     <div id="fixed-available">
                             <ul class="inputs-list">
-                               {% for question in questions %}
-                               {% for q in question %}
+                               {% for q in questions %}
                                     <li>
                                         <label>
-                                            <input type="checkbox" name="questions" data-qid="{{q.id}}" value={{q.id}}>
+                                            <input type="checkbox" name="questions" id="{{q.id}}" value={{q.id}}>
                                             <span> {{ q.summary }} </span> <span> {{ q.points }} </span>
                                         </label>
                                      </li>
-                                {% endfor %}
                                 {% endfor %}
                             </ul>
 
@@ -92,14 +84,14 @@ select
                     <p><u>Fixed questions currently in paper:</u></p>
                     <div id="fixed-added">
                             <ul class="inputs-list">
-                               {% for question in fixed_questions %}
-                               {% for q in question %}
+                               {% for ques in fixed_questions %}
+                               {% for q1 in ques %}
                                     <li>
                                         <label>
                                             <input type="checkbox" name="added-questions"
-                                            data-qid="{{q.id}}" value={{q.id}}>
-                                            <span> {{ q.summary }} </span>
-                                            <span> {{ q.points }} </span>
+                                            data-qid="{{q1.id}}" value={{q1.id}}>
+                                            <span> {{ q1.summary }} </span>
+                                            <span> {{ q1.points }} </span>
                                         </label>
                                      </li>
                                 {% endfor %}
