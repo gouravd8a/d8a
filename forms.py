@@ -64,6 +64,20 @@ class QuestionFilterForm(FlaskForm):
     language = SelectField(choices = languages)
     question_type = SelectField(choices=question_types)
 
+class QuestionForm(FlaskForm):
+    summary =TextField()
+    language = SelectField(choices = languages)
+    question_type = SelectField(choices=question_types)
+    points = FloatField(default = 1.0)
+    description = TextField()
+    tags = TextField()
+    solution = TextField()
+    snippet = TextField()
+    partial_grading = BooleanField(default= False)
+    grade_assignment_upload = BooleanField(default = False)
+    min_time = IntegerField()
+
+
 
 
 class QuizForm(FlaskForm):
@@ -71,14 +85,14 @@ class QuizForm(FlaskForm):
     start_date_time = DateTimeField(default=datetime.now())
     end_date_time = DateTimeField(default=datetime(2199, 1, 1))
     duration = IntegerField(default = 20)
-    active = BooleanField(default = True)
+    active = BooleanField(default = 'true')
     description = TextField([validators.length(max=256)])
     pass_criteria = FloatField(default = 40)
-    attempts_allowed = SelectField(choices = [('default','1'), ('2','2'), ('3','3'), ('4','4'), ('5','5'), ('inf','infinite')])
+    attempts_allowed = SelectField(choices = [('1','1'), ('2','2'), ('3','3'), ('4','4'), ('5','5'), ('inf','infinite')])
     time_between_attempts = SelectField(choices = days_between_attempts)
     instructions = TextField(default = None)
-    view_answerpaper = BooleanField(default = False)
-    allow_skip = BooleanField(default = True)
+    view_answerpaper = BooleanField(default = 'false')
+    allow_skip = BooleanField(default = 'true')
     is_trial = BooleanField(default = False)
     weightage = FloatField(default = 1.0)
     is_exercise = BooleanField(default = False)

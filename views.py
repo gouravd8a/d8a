@@ -1,4 +1,5 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, send_file
+from flask import Flask, request, render_template, redirect, url_for, flash, send_file, session
+from functools import wraps
 from forms import UserLoginForm, CourseForm, QuizForm, UserRegisterForm, QuestionFilterForm
 from wtforms import DateTimeField
 import sqlite3 as sql
@@ -13,25 +14,41 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+def login_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return f(*args, **kwargs)
+        else:
+            return redirect(url_for('user_login'))
+    return wrap
 
 @app.route('/', methods=['POST', 'GET'])
 def user_login():
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
     """Take the credentials of the user and log the user in."""
+    if 'logged_in' in session:
+        if ismoderator(conn, session['username']):
+            return redirect(url_for('moderator_dashboard'))
+        else:
+            return redirect(url_for('quizlist_user'))
     if request.method == 'POST':
 
         user = request.form['username']
         password = request.form['password']
 
-        conn = sql.connect('db.sqlite3')
-        conn.row_factory = sql.Row
+        
 
         cursor = conn.execute("select * from auth_user")
 
         for row in cursor:
-            uname = row["first_name"]
+            uname = row["username"]
             pword = row["last_name"]
             uid = row["id"]
             if uname == user and pword == password:
+                session['logged_in'] = True
+                session['username'] = user
                 if ismoderator(conn, uid):
                     return redirect(url_for('moderator_dashboard'))
                 else:
@@ -39,6 +56,13 @@ def user_login():
 
     form = UserLoginForm()
     return render_template('yaksh/login.html', form=form)
+
+@app.route('/exam/logout/')
+@login_required
+def user_logout():
+    """Show a page to inform user that the quiz has been compeleted."""
+    session.clear()
+    return redirect(url_for('user_login'))
 
 
 @app.route('/exam/register', methods=['POST', 'GET'])
@@ -70,31 +94,34 @@ def user_register():
         conn.commit()
         conn.close()
         if new2 and new:
-            return render_template('yaksh/hello2.html')
+            return redirect(url_for('user_login'))
 
     form = UserRegisterForm()
     return render_template('yaksh/register.html', form=form)
 
 
 @app.route('/exam/quizzes/')
+@login_required
 def quizlist_user():
     flash('You were successfully logged in')
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
     course = conn1.execute("select * from yaksh_course")
-    return render_template('yaksh/quizzes_user.html', courses=course, user="Student", title="All Courses")
+    return render_template('yaksh/quizzes_user.html', courses=course, user=session['username'], title="All Courses")
 
 
 @app.route('/exam/manage')
+@login_required
 def moderator_dashboard():
     flash('You were successfully logged in')
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
     course = conn1.execute("select * from yaksh_course")
-    return render_template('yaksh/moderator_dashboard.html', course=course, user="Teacher")
+    return render_template('yaksh/moderator_dashboard.html', course=course, user=session['username'])
 
 
 @app.route('/exam/course_modules/<cid>')
+@login_required
 def course_module(cid):
     lmod = []
     conn1 = sql.connect('db.sqlite3')
@@ -108,10 +135,11 @@ def course_module(cid):
         record = conn1.execute("select * from yaksh_learningmodule where id = ?", (lid,))
         lmod.append(record)
     # print(lmod)
-    return render_template('yaksh/course_modules.html', course=c, learning_modules=lmod, user="Student")
+    return render_template('yaksh/course_modules.html', course=c, learning_modules=lmod, user=session['username'])
 
 
 @app.route('/exam/manage/courses/all_quizzes/', methods=['POST', 'GET'])
+@login_required
 def show_all_quizzes():
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
@@ -120,6 +148,7 @@ def show_all_quizzes():
 
 
 @app.route('/exam/quizzes/view_module/<mid>/<cid>')
+@login_required
 def view_module(mid, cid, msg="none"):
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
@@ -227,32 +256,40 @@ def show_question(question, last_attempt, cid, mid, qpid, quiz, error_message = 
 
 
 @app.route('/exam/quit/<atno>/<mid>/<qpid>/<cid>/<quizid>',methods=['POST'])
+@login_required
 def quit(atno,mid,qpid,cid,quizid):
     """Show the quit page when the user logs out."""
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
     records = conn.execute("select * from yaksh_quiz where id = ?",(quizid,))
     for record in records:
         quiz = record
-    records = conn.execute("select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and course_id = ? and user_id =1", (atno,qpid,cid,))
+    records = conn.execute("select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and course_id = ? and user_id =?", (atno,qpid,cid,user_id,))
     for record in records:
         paper = record
     return render_template('yaksh/quit.html',quiz= quiz,course_id =cid,question_paper_id = qpid,module_id =mid,attempt_number = atno,paper= paper)
 
 
 @app.route('/exam/complete/<atno>/<mid>/<qpid>/<cid>/<quizid>/',methods=['POST'])
+@login_required
 def complete(atno, mid, qpid,cid,quizid,reason =None):
 
     """Show a page to inform user that the quiz has been compeleted."""
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
     if qpid is None:
         message = reason or "An Unexpected Error occurred. Please contact your '\
             'instructor/administrator.'"
         context = {'message': message}
         return render_template('yaksh/complete.html',attempt_number =atno,course_id= cid,module_id = mid,question_paper_id= qpid, message =message)
     else:
-        records = conn.execute("select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and course_id = ? and user_id =1", (atno,qpid,cid,))
+        records = conn.execute("select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and course_id = ? and user_id =?", (atno,qpid,cid,user_id,))
         for record in records:
             paper = record
         records2 = conn.execute("select * from yaksh_course where id = ?", (cid,))
@@ -270,6 +307,7 @@ def complete(atno, mid, qpid,cid,quizid,reason =None):
         return render_template('yaksh/complete.html',message=message,paper = paper,module_id =mid,course_id = cid,learning_unit = learning_unit)
 
 @app.route('/exam/<qid>/skip/<atno>/<mid>/<qpid>/<cid>/',methods=['POST'])
+@login_required
 def skip(qid, atno, mid, qpid, cid):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
@@ -299,6 +337,7 @@ def skip(qid, atno, mid, qpid, cid):
 
 
 @app.route('/exam/<qid>/check/<atno>/<mid>/<qpid>/<cid>/', methods=['POST'])
+@login_required
 def check(qid, atno, mid, qpid, cid):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
@@ -598,11 +637,14 @@ def get_latest_answer1(question_id):
 
 @app.route('/exam/start/<qpid>/<mid>/<cid>/<attempt_num>/', methods=['POST', 'GET'])
 @app.route('/exam/start/<qpid>/<mid>/<cid>/')
+@login_required
 def start(qpid, mid, cid, attempt_num=None):
     #print("hi")
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
-    userid = 1
+    records = conn1.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
     status = has_questions(qpid)
     if status == "false":
         return view_module(mid=mid, cid=cid, msg="Quiz does not have Questions, please contact your '\
@@ -617,13 +659,13 @@ def start(qpid, mid, cid, attempt_num=None):
         status1 = expired(quiz)
         if status1 == "yes":
             return view_module(mid=mid, cid=cid, msg="Quiz has expired.")
-    last_attempt = get_user_last_attempt(qpid, userid)
+    last_attempt = get_user_last_attempt(qpid, user_id)
     if last_attempt and is_attempt_inprogress(last_attempt):
         return show_question(
             question=current_question(last_attempt), last_attempt=last_attempt,
             cid=cid, mid=mid, qpid=qpid, quiz=quiz,
             previous_question=current_question(last_attempt))
-    if can_attempt_now(qpid, cid, userid, quiz) == "false":
+    if can_attempt_now(qpid, cid, user_id, quiz) == "false":
         msg = "You cannot attempt {0} quiz more than {1} time(s)".format(
             quiz['description'], quiz['attempts_allowed'])
         return view_module(mid=mid, cid=cid, msg=msg)
@@ -639,11 +681,11 @@ def start(qpid, mid, cid, attempt_num=None):
 
         timezone = pytz.utc
         return render_template('yaksh/intro.html', attempt_number=attempt_num, question_paper=question_paper, quiz=quiz,
-                               timezone=timezone, user="Student", qpid=qpid, mid=mid, cid=cid)
+                               timezone=timezone, user=session['username'], qpid=qpid, mid=mid, cid=cid)
     else:
 
         userip = request.remote_addr
-        new_paper = make_answerpaper(cid, userip, attempt_number, question_paper, user="Student", quiz=quiz)
+        new_paper = make_answerpaper(cid, userip, attempt_number, question_paper, user=session['username'], quiz=quiz)
         if new_paper['status'] == "inprogress":
             return show_question(question=current_question(new_paper),
                                  last_attempt=new_paper, cid=cid,
@@ -655,6 +697,9 @@ def make_answerpaper(cid, userip, attempt_number, question_paper, user, quiz):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
     stime = datetime.now()
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
     sstime = str(stime)
     start_time = sstime[0:sstime.find(".")]
     start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
@@ -669,12 +714,12 @@ def make_answerpaper(cid, userip, attempt_number, question_paper, user, quiz):
     status = "inprogress"
     print(questions_order)
     records = conn.execute(
-        "insert into yaksh_answerpaper (attempt_number,start_time,comments,end_time,user_ip,status,question_paper_id,user_id,questions_order,course_id) values (?,?,?,?,?,?,?,1,?,?)",
-        (attempt_number, start_time, "hello", end_time, userip, status, qpid, questions_order, cid))
+        "insert into yaksh_answerpaper (attempt_number,start_time,comments,end_time,user_ip,status,question_paper_id,user_id,questions_order,course_id) values (?,?,?,?,?,?,?,?,?,?)",
+        (attempt_number, start_time, "hello", end_time, userip, status, qpid, user_id,questions_order, cid))
     conn.commit()
     records = conn.execute(
-        "select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and user_id = 1",
-        (attempt_number, qpid,))
+        "select * from yaksh_answerpaper where attempt_number = ? and question_paper_id = ? and user_id = ?",
+        (attempt_number, qpid,user_id,))
     for record in records:
         apid = record['id']
         ans_paper = record
@@ -927,39 +972,83 @@ def ismoderator(conn, uid):
 
 
 @app.route('/exam/manage/courses')
+@login_required
 def course():
     return render_template('yaksh/courses.html')
 
 
 @app.route('/exam/manage/add_course')
+@login_required
 def add_course():
     form = CourseForm()
     return render_template("yaksh/add_course.html", form=form)
 
 
 @app.route('/exam/manage/monitor')
+@login_required
 def monitor():
     return render_template('yaksh/monitor.html')
 
 
 @app.route('/exam/manage/add_lesson')
+@login_required
 def add_lesson():
     return render_template('yaksh/add_lesson.html')
 
 
 @app.route('/data/<filename>')
+@login_required
 def data(filename):
     file = filename
     return send_file('static/' + file, attachment_filename=file)
 
 
-@app.route('/exam/manage/addquiz/')
+@app.route('/exam/manage/addquiz/',methods=['POST', 'GET'] )
+@login_required
 def add_quiz():
+
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
+
+    if request.method == 'POST':
+        start_date_time = request.form['start_date_time']
+        end_date_time = request.form['end_date_time']
+        duration = request.form['duration']
+        description = request.form['description']
+        pass_criteria = request.form['pass_criteria']
+        attempts_allowed = request.form['attempts_allowed']
+        time_between_attempts = request.form['time_between_attempts']
+        if request.form['view_answerpaper'] == 'y':
+            view_answerpaper = "true"
+        else:
+            view_answerpaper = "false"
+
+        if request.form['allow_skip'] == 'y':
+            allow_skip = "true"
+        else:
+            allow_skip = "false"
+        if request.form['active'] == 'y':
+            active = "true"
+        else:
+            active = "false"
+        weightage = request.form['weightage']
+        conn = sql.connect('db.sqlite3')
+        conn.row_factory = sql.Row
+        new = conn.execute(
+            "insert into yaksh_quiz (start_date_time,end_date_time,duration,active,description,pass_criteria,attempts_allowed,time_between_attempts,view_answerpaper,allow_skip,creator_id,weightage,is_trial,is_exercise) values (?,?,?,?,?,?,?,?,?,?,?,?,'false','false')",
+            (start_date_time, end_date_time, duration, active, description, pass_criteria, attempts_allowed,time_between_attempts,view_answerpaper,allow_skip,user_id,weightage,))
+        conn.commit()
+        return redirect(url_for('show_all_quizzes'))
     form = QuizForm()
+
     return render_template('yaksh/add_quiz.html', form=form)
 
 
 @app.route('/exam/show_lesson/<lid>/<mid>/<cid>/')
+@login_required
 def show_lesson(lid, mid, cid):
     conn1 = sql.connect('db.sqlite3')
     conn1.row_factory = sql.Row
@@ -987,6 +1076,7 @@ def show_lesson(lid, mid, cid):
 
 
 @app.route('/exam/next_unit/<cid>/<mid>/<uid>/1/')
+@login_required
 def get_nextunit(cid, mid, uid):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
@@ -1010,6 +1100,7 @@ def get_nextunit(cid, mid, uid):
 
 
 @app.route('/exam/next_unit/<cid>/<mid>/<cuid>')
+@login_required
 def get_next_unit(cid, mid, cuid):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
@@ -1045,13 +1136,53 @@ def get_next_unit(cid, mid, cuid):
     return "Sorry the quiz is not ready"
 
 
-@app.route('/exam/manage/designquestionpaper/<qid>/<qpid>/')
+@app.route('/exam/manage/questions')
+@login_required
+def show_questions():
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    questions = []
+    records = conn.execute("select * from yaksh_question")
+    for record in records:
+        questions.append(record)
+    form = QuestionFilterForm()
+    return render_template('yaksh/showquestions.html',form = form,questions = questions)
+
+
+@app.route('/exam/manage/addquestion/')
+@login_required
+def add_question():
+    return render_template('yaksh/add_question.html')
+
+
+@app.route('/exam/manage/designquestionpaper/<qid>/<qpid>/',methods=['POST', 'GET'])
+@login_required
 def design_questionpaper(qid, qpid):
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
+
+    if request.method == 'POST':
+        print(request.form)
+        remove = request.form.getlist('added-questions',None)
+        add = request.form.getlist('questions',None)
+
+        if not remove:
+            for q in add:
+                records = conn.execute("insert into yaksh_questionpaper_fixed_questions (questionpaper_id,question_id) values (?,?)",(qpid,q,))
+                conn.commit()
+        if not add:
+            for q in remove:
+                records = conn.execute("delete from yaksh_questionpaper_fixed_questions where questionpaper_id = ? and question_id = ?",(qpid,q,))
+                conn.commit()
+
+
+
+    
     records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?", (qid,))
     for record in records:
         qpaper = record
+    all_q = []
+    f_q =[]
     point_options = []
     questions = []
     questions2 = []
@@ -1064,21 +1195,29 @@ def design_questionpaper(qid, qpid):
     question = conn.execute("select * from yaksh_questionpaper_fixed_questions where questionpaper_id = ?", (qpid,))
     for q in question:
         quesno = q['question_id']
+        all_q.append(quesno)
         question1 = conn.execute("select * from yaksh_question where id = ?", (quesno,))
         questions.append(question1)
-    question2 = conn.execute("select * from yaksh_questionpaper_fixed_questions where questionpaper_id = ?", (qpid,))
-    for q1 in question2:
-        quesno2 = q1['question_id']
-        qu.append(quesno2)
+        print(all_q)
+
+    question2 = conn.execute("select * from yaksh_question")
+    for ques in question2:
+        quesno2 = ques['id']
+        print(quesno2)
+        if quesno2 not in all_q:
+            qu.append(ques)
+        print(qu)
     return render_template('yaksh/design_questionpaper.html', qpaper=qpaper, filter_form=filter_form,
-                           questions=questions2, fixed_questions=questions)
+                           questions=qu, fixed_questions=questions, quizid = qid)
 
 
 @app.route('/exam/manage/addquiz/<qid>/')
+@login_required
 def edit_quiz(qid):
     form = QuizForm()
     conn = sql.connect('db.sqlite3')
     conn.row_factory = sql.Row
+
     records = conn.execute("select * from yaksh_quiz where id = ?", (qid,))
     for record in records:
         start_date_time = record['start_date_time']
@@ -1116,7 +1255,7 @@ def get_creator_name(course):
     cid = course['id']
     records = conn.execute("select * from yaksh_course where id = ?", (cid,))
     for record in records:
-        crid = 3
+        crid = record['creator_id']
     records = conn.execute("select * from auth_user where id = ?", (crid,))
     for record in records:
         name.append(record['first_name'] + " " + record['last_name'])
@@ -1470,10 +1609,9 @@ def get_passed_students(quiz, cid):
     records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?", (qid,))
     for record in records:
         tot = conn.execute(
-            "select * from yaksh_answerpaper where question_paper_id = ? and course_id = ? and passed = 'true'",
-            (record['id'], cid,))
+            "select * from yaksh_answerpaper where question_paper_id = ? and course_id = ? and passed = 1",(record['id'], cid,))
         for t in tot:
-            # print(t)
+            #print(t)
             tot1 = tot1 + 1
     return tot1
 
@@ -1486,10 +1624,10 @@ def get_failed_students(quiz, cid):
     records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?", (qid,))
     for record in records:
         tot = conn.execute(
-            "select * from yaksh_answerpaper where question_paper_id = ? and course_id = ? and passed = 'false'",
+            "select * from yaksh_answerpaper where question_paper_id = ? and course_id = ? and passed = 0",
             (record['id'], cid,))
         for t in tot:
-            # print(t)
+            print(t)
             tot1 = tot1 + 1
     # print(tot1)
     return tot1
