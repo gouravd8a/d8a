@@ -1,7 +1,7 @@
 $(document).ready(function(){
-    $question_type = $("#id_question_type");
-    $marks = $("#id_marks");
-    $language = $("#id_language");
+    $question_type = $("#question_type");
+    //$marks = $("#id_marks");
+    $language = $("#language");
 
     function question_filter() {
         $.ajax({
@@ -9,7 +9,7 @@ $(document).ready(function(){
             type: "POST",
             data: {
                 question_type: $question_type.val(),
-                marks: $marks.val(),
+                //marks: $marks.val(),
                 language: $language.val()
             },
             dataType: "html",
@@ -28,9 +28,9 @@ $(document).ready(function(){
         question_filter()
     });
 
-    $marks.change(function() {
-        question_filter()
-    });
+    // $marks.change(function() {
+        // question_filter()
+    // });
 
     $("#checkall").change(function(){
         if($(this).prop("checked")) {
