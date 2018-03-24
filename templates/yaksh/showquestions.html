@@ -24,25 +24,6 @@
 <!-- Show questions -->
 <div id="show" class= "tab-pane fade in active">
 <form name=frm action="" method="post">
-{% if message %}
-{%if message == "Questions Uploaded Successfully"%}
-<div class="alert alert-success alert-dismissable">
-<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-  {{ message }}
-</div>
-{%else %}
-<div class="alert alert-danger alert-dismissable"> 
-  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-  {{ message }}
-</div>
-{% endif %}
-{% endif %}
-{% if msg %}
-<div class="alert alert-danger alert-dismissable"> 
-  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-  {{ msg }}
-</div>
-{% endif %}
 <br><br>
 <form name=frm action="" method="post">
 <!-- Filtering Questions  -->

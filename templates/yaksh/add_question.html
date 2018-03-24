@@ -1,0 +1,41 @@
+{% extends "manage.html" %}
+
+{% block pagetitle %} Add Question {% endblock pagetitle %}
+
+{% block css %}
+<link rel="stylesheet" media="all" type="text/css" href="{{ URL_ROOT }}/static/yaksh/css/autotaggit.css" />
+{% endblock %}
+
+{% block script %}
+<script src="{{ URL_ROOT }}/static/yaksh/js/add_question.js"></script>
+<script src="{{ URL_ROOT }}/static/yaksh/js/mathjax/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+{% endblock %}
+
+{% block onload %} onload='javascript:textareaformat();' {% endblock %}
+
+{% block content %}
+<form action="" method="post" name=frm onSubmit="return autosubmit();" enctype="multipart/form-data">
+  <center><table class="table">
+  <tr><td>Summary: <td>{{ qform.summary }}
+  <tr><td> Language: <td> {{qform.language}}
+  <tr><td> Type: <td> {{ qform.question_type }}
+  <tr><td>Points:<td><button class="btn-mini" type="button" onClick="increase(frm);">+</button>{{qform.points }}<button class="btn-mini" type="button" onClick="decrease(frm);">-</button>
+    <tr><td><strong>Rendered: </strong><td><p id='my'></p>
+  <tr><td>Description: <td>{{ qform.description}}
+  <tr><td>Choice1: <td>{{ qform.option1 }}  
+    <tr><td>Choice2: <td>{{ qform.option2 }} 
+      <tr><td>Choice3: <td>{{ qform.option3 }} 
+        <tr><td>Choice4: <td>{{ qform.option4 }}
+      <tr><td> Correct: <td> {{qform.correct}}     
+  <tr><td>Minimum Time(in minutes):<td> {{ qform.min_time }}
+
+  </table></center>
+
+
+  <center>
+    <button class="btn" type="submit" name="save_question">Save</button>
+    <button class="btn" type="button" name="button" onClick='location.replace("{{URL_ROOT}}/exam/manage/questions/");'>Back to Questions</button>
+    <button class="btn" type="submit" name="delete_files">Delete Selected Files</button>
+  </center>
+</form>
+{% endblock %}

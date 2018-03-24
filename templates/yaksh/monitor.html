@@ -25,3 +25,95 @@ $(document).ready(function()
 </script>
 {% endif %}
 {% endblock %}
+
+{% block content %}
+
+{# ############################################################### #}
+{# This is rendered when we are just viewing exam/monitor #}
+
+{% if course_details %}
+    <table id="course-details" class="table table-bordered">
+    <tr>
+    <th>Courses</th>
+    <th> Quizzes </th>
+    </tr>
+
+    {% for course in course_details %}
+    <tr>
+    <td><ul class="list-group">{{course.name}} </td>
+
+    {% for stat in course.id|has_quiz%}
+    {% if stat == "true" %}
+    <td>
+    {% for quiz in course.id|get_quiz %}
+    {% for q in quiz %}
+     <li class="list-group-item"><a href = "{{URL_ROOT}}/exam/manage/monitor/{{q.id}}/{{course.id}}/">
+     {{q.description}}
+     </a></li>
+     {% endfor %}
+    {% endfor %}
+    </td>
+    {% else %}
+    <td> No quiz</td>
+    {% endif %}
+    {% endfor %}
+    </ul></tr>
+    {% endfor %}
+    </table>
+{% endif %}
+
+{# ############################################################### #}
+{# This is rendered when we are just viewing exam/monitor/quiz_num #}
+{% if msg != "Monitor" %}
+{% if quiz %}
+{% if papers %}
+<p>Course Name: {{ course.name }}</p>
+<p>Quiz Name: {{ quiz.description }}</p>
+<p>Number of papers: {{ papers|length }} </p>
+
+
+
+<table id="result-table" class="tablesorter table table table-striped">
+    <thead>
+    <tr>
+    <th> Name </th>
+    <th> Username </th>
+    <th> Roll number </th>  
+    <th> Institute </th>
+    <th> Marks obtained </th>
+    <th> Attempt No </th>
+    <th> Passed </th>
+    <th> Status </th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for paper in papers %}
+    <tr> 
+        {% for name,username,rollno,ins in paper.user_id| get_user_details %}
+        <td> <a href="{{URL_ROOT}}/exam/manage/user_data/{{paper.user_id}}/{{paper.question_paper_id}}/{{course.id}}">{{ name }}</a> </td>
+        <td> {{username }} </td>
+        <td> {{ rollno }} </td>
+        <td> {{ ins }} </td>
+        <td> {{ paper.marks_obtained }} </td>
+        <td> {{ paper.attempt_number }} </td>
+        <td> {{ paper.passed }} </td>
+        <td>{{ paper.status }}</td>
+        </div>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p> No answer papers found for {{ quiz.description }}</p>
+{% endif %} {# if papers #}
+{% else %}
+<h4>No Quiz Found</h4>
+{% endif %}
+{% endif %}
+
+<!-- CSV Modal -->
+
+
+
+{% endblock %}
