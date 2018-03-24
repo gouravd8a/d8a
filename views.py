@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, send_file, session
 from functools import wraps
-from forms import UserLoginForm, CourseForm, QuizForm, UserRegisterForm, QuestionFilterForm
+from forms import UserLoginForm, CourseForm, QuizForm, UserRegisterForm, QuestionFilterForm, QuestionForm
 from wtforms import DateTimeField
 import sqlite3 as sql
 from datetime import datetime, timedelta
@@ -983,11 +983,59 @@ def add_course():
     form = CourseForm()
     return render_template("yaksh/add_course.html", form=form)
 
-
+@app.route('/exam/manage/monitor/<qid>/<cid>/')
 @app.route('/exam/manage/monitor')
+@app.route('/exam/manage/monitor/')
 @login_required
-def monitor():
-    return render_template('yaksh/monitor.html')
+def monitor(qid =None, cid = None):
+
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    course_details = []
+    papers = []
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
+    print(user_id)
+    if qid is None:
+        records = conn.execute("select * from yaksh_course where creator_id = ?",(user_id,))
+        for record in records:
+            print(record['name'])
+            course_details.append(record)
+        return render_template('yaksh/monitor.html',course_details = course_details,papers = [],msg = "Monitor")
+    else:
+        records = conn.execute("select * from yaksh_quiz where id = ?",(qid,))
+        for record in records:
+            quiz = record
+        records = conn.execute("select * from yaksh_course where id = ?",(cid,))
+        for record in records:
+            course = record
+        records = conn.execute("select * from yaksh_questionpaper where quiz_id = ?",(qid,))
+        for record in records:
+            q_paper = record
+        if q_paper:
+            records = conn.execute("select * from yaksh_answerpaper where question_paper_id = ? and course_id = ?",(q_paper['id'],cid,))
+            for record in records:
+                papers.append(record)
+        return render_template('yaksh/monitor.html',papers = papers,q_paper = q_paper,course = course , quiz = quiz,msg = "Quiz Results")
+
+@app.route('/exam/ajax/questions/filter/',methods=['POST', 'GET'])
+def ajax_questions_filter():
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    if request.method == "POST":
+        print(request.form)
+        question_type = request.form.get('question_type')
+        language = request.form.get('language')
+        if language !="select" or question_type !="select":
+            if language == "select":
+                records = conn.execute("select * from yaksh_question where type = ?",(question_type,))
+            elif question_type == "select":
+                records = conn.execute("select * from yaksh_question where language = ?",(language,))
+            else:
+                records = conn.execute("select * from yaksh_question where type = ? and language = ?",(question_type,language,))
+    return render_template('yaksh/ajax_question_filter.html',questions = records)
+
 
 
 @app.route('/exam/manage/add_lesson')
@@ -1149,10 +1197,97 @@ def show_questions():
     return render_template('yaksh/showquestions.html',form = form,questions = questions)
 
 
-@app.route('/exam/manage/addquestion/')
+@app.route('/exam/manage/addquestion/',methods = ['POST','GET'])
 @login_required
 def add_question():
-    return render_template('yaksh/add_question.html')
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    records = conn.execute("select * from auth_user where username = ?",(session['username'],))
+    for record in records:
+        user_id = record['id']
+
+    if request.method == 'POST':
+        print(request.form)
+        summary = request.form['summary']
+        language = request.form['language']
+        question_type = request.form['question_type']
+        points = request.form['points']
+        description = request.form['description']
+        option1 = request.form['option1']
+        option2 = request.form['option2']
+        option3 = request.form['option3']
+        option4 = request.form['option4']
+        min_time = request.form['min_time']
+        correct = request.form['correct']
+        conn = sql.connect('db.sqlite3')
+        conn.row_factory = sql.Row
+        new = conn.execute(
+            "insert into yaksh_question (summary,language,type,points,description,active,user_id,min_time) values (?,?,?,?,?,'true',?,?)",
+            (summary, language, question_type, points, description,user_id,min_time,))
+        conn.commit()
+        records = conn.execute("select * from yaksh_question where summary = ? and user_id = ?",(summary,user_id,))
+        for record in records:
+            qid = record['id']
+        new = conn.execute(
+            "insert into yaksh_testcase (question_id,type) values (?,?)",
+            (qid, question_type,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_testcase (question_id,type) values (?,?)",
+            (qid, question_type,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_testcase (question_id,type) values (?,?)",
+            (qid, question_type,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_testcase (question_id,type) values (?,?)",
+            (qid, question_type,))
+        conn.commit()
+        records = conn.execute("select * from yaksh_testcase where question_id = ? and type = ? order by id limit 1",(qid,question_type,))
+        for record in records:
+            tid = record['id']
+        if correct == "1":
+            cor1 = "true"
+            cor2 = "false"
+            cor3 = "false"
+            cor4 = "false"
+        elif correct == "2":
+            cor1 = "false"
+            cor2 = "true"
+            cor3 = "false"
+            cor4 = "false"
+        elif correct == "3":
+            cor1 = "false"
+            cor2 = "false"
+            cor3 = "true"
+            cor4 = "false"
+        elif correct == "1":
+            cor1 = "false"
+            cor2 = "false"
+            cor3 = "false"
+            cor4 = "true"
+        new = conn.execute(
+            "insert into yaksh_mcqtestcase (testcase_ptr_id,options,correct) values (?,?,?)",
+            (tid, option1,cor1,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_mcqtestcase (testcase_ptr_id,options,correct) values (?,?,?)",
+            (tid+1, option2,cor2,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_mcqtestcase (testcase_ptr_id,options,correct) values (?,?,?)",
+            (tid+2, option3,cor3,))
+        conn.commit()
+        new = conn.execute(
+            "insert into yaksh_mcqtestcase (testcase_ptr_id,options,correct) values (?,?,?)",
+            (tid+3, option4,cor4,))
+        conn.commit()
+
+        return redirect(url_for('show_questions'))
+    form = QuestionForm()
+
+    return render_template('yaksh/add_question.html',qform = form)
 
 
 @app.route('/exam/manage/designquestionpaper/<qid>/<qpid>/',methods=['POST', 'GET'])
@@ -1566,6 +1701,55 @@ def get_course_details(course):
             fs.append(get_failed_students(q1, cid))
     return [(qname, ts, ps, fs)]
 
+@app.template_filter('get_quiz')
+def get_quiz(cid):
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    quizdetails = []
+    records = conn.execute("select * from yaksh_course_learning_module where course_id = ?", (cid,))
+    for record in records:
+        records1 = conn.execute("select * from yaksh_learningmodule_learning_unit where learningmodule_id = ?",
+                                (record['learningmodule_id'],))
+        for record1 in records1:
+            records2 = conn.execute("select * from yaksh_learningunit where id = ?", (record1['learningunit_id'],))
+            for record2 in records2:
+                records3 = conn.execute("select * from yaksh_quiz where id = ?", (record2['quiz_id'],))
+                quizdetails.append(records3)
+    return quizdetails
+
+@app.template_filter('has_quiz')
+def has_quiz(cid):
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    stat = []
+    records = conn.execute("select * from yaksh_course_learning_module where course_id = ?", (cid,))
+    for record in records:
+        records1 = conn.execute("select * from yaksh_learningmodule_learning_unit where learningmodule_id = ?",
+                                (record['learningmodule_id'],))
+        for record1 in records1:
+            records2 = conn.execute("select * from yaksh_learningunit where id = ?", (record1['learningunit_id'],))
+            for record2 in records2:
+                records3 = conn.execute("select * from yaksh_quiz where id = ?", (record2['quiz_id'],))
+                for record3 in records3:
+                    stat.append("true")
+                    return stat
+    stat.append("false")
+    return stat
+
+@app.template_filter('get_user_details')
+def get_user_details(uid):
+    conn = sql.connect('db.sqlite3')
+    conn.row_factory = sql.Row
+    records = conn.execute("select * from auth_user where id = ?",(uid,))
+    for record in records:
+        name = record['first_name']+ record['last_name']
+        username = record['username']
+    records = conn.execute("select * from yaksh_profile where user_id  = ?",(uid,))
+    for record in records:
+        rollno = record['roll_number']
+        ins = record['institute']
+    return [(name,username,rollno,ins)]
+
 
 def get_quizzes(cid):
     conn = sql.connect('db.sqlite3')
@@ -1629,7 +1813,7 @@ def get_failed_students(quiz, cid):
         for t in tot:
             print(t)
             tot1 = tot1 + 1
-    # print(tot1)
+    print(tot1)
     return tot1
 
 

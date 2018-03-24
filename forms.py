@@ -8,12 +8,12 @@ days_between_attempts = [(j, j) for j in range(401)]
 
 languages = (
     ("select", "Select Language"),
-    ("python", "Python"),
-    ("bash", "Bash"),
-    ("c", "C Language"),
-    ("cpp", "C++ Language"),
-    ("java", "Java Language"),
-    ("scilab", "Scilab"),
+    ("Python", "Python"),
+    ("Bash", "Bash"),
+    ("C", "C Language"),
+    ("Cpp", "C++ Language"),
+    ("Java", "Java Language"),
+    ("Scilab", "Scilab"),
 )
 
 question_types = (
@@ -70,12 +70,12 @@ class QuestionForm(FlaskForm):
     question_type = SelectField(choices=question_types)
     points = FloatField(default = 1.0)
     description = TextField()
-    tags = TextField()
-    solution = TextField()
-    snippet = TextField()
-    partial_grading = BooleanField(default= False)
-    grade_assignment_upload = BooleanField(default = False)
     min_time = IntegerField()
+    option1 = TextField()
+    option2 = TextField()
+    option3 = TextField()
+    option4 = TextField()
+    correct = SelectField(choices = [('1','1'), ('2','2'), ('3','3'), ('4','4')])
 
 
 
